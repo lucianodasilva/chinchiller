@@ -1,6 +1,6 @@
 # Build folders and ides
-*/build/
-*/.vscode/
+build/
+.vscode/
 
 # Prerequisites
 *.d
