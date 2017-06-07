@@ -1,6 +1,8 @@
 # Build folders and ides
 build/
 .vscode/
+.idea/
+cmake-build-*/
 
 # Prerequisites
 *.d
