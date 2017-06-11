@@ -1,14 +1,12 @@
-//
-// Created by Luciano da Silva on 06/06/17.
-//
-
-#ifndef _chinchiller_common_io_pin_h_
-#define _chinchiller_common_io_pin_h_
+#pragma once
+#ifndef _chinchiller_common_mcu_io_pin_h_
+#define _chinchiller_common_mcu_io_pin_h_
 
 #include "mcu.h"
 
-namespace common {
+namespace mcu {
     namespace io {
+
         enum class pin_mode : uint8_t {
             input = 0,
             output = 1,
@@ -26,15 +24,18 @@ namespace common {
         struct pin {
 
             // pin info
-            constexpr static auto const & traits = mcu::io::pin_traits_lookup [pin_num - 1];
-            constexpr static uint8_t const pin_mask = _BV(traits.bit);
+            constexpr static auto const &   traits      = mcu::hardware::io::pin_traits_lookup [pin_num - 1];
+            constexpr static uint8_t const  pin_mask    = _BV(traits.bit);
 
             // compile-time validation
-            static_assert (pin_num > 0 && pin_num <= mcu::io::available_pin_count, "invalid pin number");
-            static_assert (traits !=  mcu::io::pin_null, "unsupported pin");
+            static_assert (pin_num > 0 && pin_num <= mcu::hardware::io::available_pin_count, "invalid pin number");
+            static_assert (traits !=  mcu::hardware::io::pin_null, "unsupported pin");
 
             pin (pin_mode mode) {
+                set_mode (mode);
+            }
 
+            inline void set_mode (pin_mode mode) const {
                 volatile uint8_t * ddr  = traits.port.ddr.u8_ptr;
                 volatile uint8_t * port = traits.port.port.u8_ptr;
 
@@ -86,4 +87,4 @@ namespace common {
     }
 }
 
-#endif // _chinchiller_common_io_pin_h_
+#endif // _chinchiller_common_mcu_io_pin_h_
