@@ -12,159 +12,30 @@ namespace mcu {
 
     namespace hardware {
 
-        namespace io {
-
-            constexpr _port_traits const port_b = {
-                    (uint16_t) &DDRB,
-                    (uint16_t) &PORTB,
-                    (uint16_t) &PINB
-            };
-
-            constexpr _port_traits const port_c = {
-                    (uint16_t) &DDRC,
-                    (uint16_t) &PORTC,
-                    (uint16_t) &PINC
-            };
-
-            constexpr _port_traits const port_d = {
-                    (uint16_t) &DDRD,
-                    (uint16_t) &PORTD,
-                    (uint16_t) &PIND
-            };
-
-            constexpr _pin_traits const pin_traits_lookup[] = {
-                    { // pin 01
-                            port_d,
-                            6
-                    },
-                    { // pin 02
-                            port_d,
-                            0
-                    },
-                    { // pin 03
-                            port_d,
-                            1
-                    },
-                    { // pin 04
-                            port_d,
-                            2
-                    },
-                    { // pin 05
-                            port_d,
-                            3
-                    },
-                    { // pin 06
-                            port_d,
-                            4
-                    },
-                    // pin 07
-                    pin_null,
-                    // pin 08
-                    pin_null,
-                    { // pin 09
-                            port_b,
-                            6
-                    },
-                    { // pin 10
-                            port_b,
-                            7
-                    },
-                    { // pin 11
-                            port_d,
-                            5
-                    },
-                    { // pin 12
-                            port_d,
-                            6
-                    },
-                    { // pin 13
-                            port_d,
-                            7
-                    },
-                    { // pin 14
-                            port_b,
-                            0
-                    },
-                    { // pin 15
-                            port_b,
-                            1
-                    },
-                    { // pin 16
-                            port_b,
-                            2
-                    },
-                    { // pin 17
-                            port_b,
-                            3
-                    },
-                    { // pin 18
-                            port_b,
-                            4
-                    },
-                    { // pin 19
-                            port_b,
-                            5
-                    },
-                    // pin 20
-                    pin_null,
-                    // pin 21
-                    pin_null,
-                    // pin 22
-                    pin_null,
-                    { // pin 23
-                            port_c,
-                            0
-                    },
-                    { // pin 24
-                            port_c,
-                            1
-                    },
-                    { // pin 25
-                            port_c,
-                            2
-                    },
-                    { // pin 26
-                            port_c,
-                            3
-                    },
-                    { // pin 27
-                            port_c,
-                            4
-                    },
-                    { // pin 28
-                            port_c,
-                            5
-                    }
-            };
-
-            constexpr size_t const available_pin_count = array_size(pin_traits_lookup);
-
-        }
-
         constexpr _timer_traits const timer_traits_lookup[] = {
                 // timer0
                 {
-                        (uint16_t) &TCCR0A,
-                        (uint16_t) &TCCR0B,
-                        (uint16_t) &TCNT0,
-                        (uint16_t) &TIMSK0,
-                        (uint16_t) &TIFR0
+                        to_reg(TCCR0A),
+                        to_reg(TCCR0B),
+                        to_reg(TCNT0),
+                        to_reg(TIMSK0),
+                        to_reg(TIFR0)
                 },
                 // timer1
                 {
-                        (uint16_t) &TCCR1A,
-                        (uint16_t) &TCCR1B,
-                        (uint16_t) &TCNT1,
-                        (uint16_t) &TIMSK1,
-                        (uint16_t) &TIFR1
+                        to_reg(TCCR1A),
+                        to_reg(TCCR1B),
+                        to_reg(TCNT1),
+                        to_reg(TIMSK1),
+                        to_reg(TIFR1)
                 },
                 // timer2
                 {
-                        (uint16_t) &TCCR2A,
-                        (uint16_t) &TCCR2B,
-                        (uint16_t) &TCNT2,
-                        (uint16_t) &TIMSK2,
-                        (uint16_t) &TIFR2
+                        to_reg(TCCR2A),
+                        to_reg(TCCR2B),
+                        to_reg(TCNT2),
+                        to_reg(TIMSK2),
+                        to_reg(TIFR2)
                 },
         };
 
@@ -239,6 +110,204 @@ namespace mcu {
             using waveform_generation_enum  = waveform_generation_mode_8bit;
             using clock_select_enum         = clock_select_high_res;
         };
+
+        namespace io {
+
+            constexpr _port_traits const port_b = {
+                    to_reg(DDRB),
+                    to_reg(PORTB),
+                    to_reg(PINB)
+            };
+
+            constexpr _port_traits const port_c = {
+                    to_reg(DDRC),
+                    to_reg(PORTC),
+                    to_reg(PINC)
+            };
+
+            constexpr _port_traits const port_d = {
+                    to_reg(DDRD),
+                    to_reg(PORTD),
+                    to_reg(PIND)
+            };
+
+            constexpr _pin_traits const pin_traits_lookup[] = {
+                    { // pin 01
+                            port_d,
+                            6,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 02
+                            port_d,
+                            0,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 03
+                            port_d,
+                            1,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 04
+                            port_d,
+                            2,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 05
+                            port_d,
+                            3,
+                            timer_traits_lookup[2],
+                            to_reg(OCR2B),
+                            4
+                    },
+                    { // pin 06
+                            port_d,
+                            4,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    // pin 07
+                    pin_null,
+                    // pin 08
+                    pin_null,
+                    { // pin 09
+                            port_b,
+                            6,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 10
+                            port_b,
+                            7,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 11
+                            port_d,
+                            5,
+                            timer_traits_lookup[0],
+                            to_reg(OCR0B),
+                            4
+                    },
+                    { // pin 12
+                            port_d,
+                            6,
+                            timer_traits_lookup[0],
+                            to_reg(OCR0A),
+                            6
+                    },
+                    { // pin 13
+                            port_d,
+                            7,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 14
+                            port_b,
+                            0,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 15
+                            port_b,
+                            1,
+                            timer_traits_lookup[1],
+                            to_reg(OCR1A),
+                            6
+                    },
+                    { // pin 16
+                            port_b,
+                            2,
+                            timer_traits_lookup[1],
+                            to_reg(OCR1B),
+                            4
+                    },
+                    { // pin 17
+                            port_b,
+                            3,
+                            timer_traits_lookup[2],
+                            to_reg(OCR2A),
+                            6
+                    },
+                    { // pin 18
+                            port_b,
+                            4,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 19
+                            port_b,
+                            5,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    // pin 20
+                    pin_null,
+                    // pin 21
+                    pin_null,
+                    // pin 22
+                    pin_null,
+                    { // pin 23
+                            port_c,
+                            0,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 24
+                            port_c,
+                            1,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 25
+                            port_c,
+                            2,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 26
+                            port_c,
+                            3,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 27
+                            port_c,
+                            4,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    },
+                    { // pin 28
+                            port_c,
+                            5,
+                            timer_null,
+                            reg_ptr_null,
+                            0
+                    }
+            };
+
+            constexpr size_t const available_pin_count = array_size(pin_traits_lookup);
+
+        }
 
     }
 }

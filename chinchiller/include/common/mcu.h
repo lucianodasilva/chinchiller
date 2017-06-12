@@ -8,68 +8,21 @@
 
 namespace mcu {
 
+    using reg_ptr_t = uint16_t;
+
+#   define to_reg(r)(reg_ptr_t)&r
+#   define from_reg(r)(volatile uint8_t *)r
+
+    constexpr reg_ptr_t const reg_ptr_null = {};
+
     namespace hardware {
 
-        union reg_ptr {
-            uint16_t address;
-            uint8_t *u8_ptr;
-            uint16_t *u16_ptr;
-        };
-
-        inline constexpr bool operator==(const reg_ptr &v1, const reg_ptr &v2) {
-            return v1.address == v2.address;
-        }
-
-        inline constexpr bool operator!=(const reg_ptr &v1, const reg_ptr &v2) {
-            return !(operator==(v1, v2));
-        }
-
-        namespace io {
-
-            struct _port_traits {
-                reg_ptr ddr;
-                reg_ptr port;
-                reg_ptr pin;
-            };
-
-            inline constexpr bool operator==(const _port_traits &v1, const _port_traits &v2) {
-                return
-                        v1.ddr == v2.ddr &&
-                        v1.port == v2.port &&
-                        v1.pin == v2.pin;
-            }
-
-            inline constexpr bool operator!=(const _port_traits &v1, const _port_traits &v2) {
-                return !(operator==(v1, v2));
-            }
-
-            constexpr _port_traits const port_null = {};
-
-            struct _pin_traits {
-                _port_traits port;
-                uint8_t bit;
-            };
-
-            inline constexpr bool operator==(const _pin_traits &v1, const _pin_traits &v2) {
-                return
-                        v1.port == v2.port &&
-                        v1.bit == v2.bit;
-            }
-
-            inline constexpr bool operator!=(const _pin_traits &v1, const _pin_traits &v2) {
-                return !(operator==(v1, v2));
-            }
-
-            constexpr _pin_traits const pin_null = {};
-
-        }
-
         struct _timer_traits {
-            reg_ptr tccra;
-            reg_ptr tccrb;
-            reg_ptr tcnt;
-            reg_ptr timsk;
-            reg_ptr tifr;
+            reg_ptr_t tccra;
+            reg_ptr_t tccrb;
+            reg_ptr_t tcnt;
+            reg_ptr_t timsk;
+            reg_ptr_t tifr;
         };
 
         inline constexpr bool operator==(const _timer_traits &v1, const _timer_traits &v2) {
@@ -87,20 +40,87 @@ namespace mcu {
 
         constexpr _timer_traits const timer_null = {};
 
+        namespace io {
+
+            struct _port_traits {
+                reg_ptr_t ddr;
+                reg_ptr_t port;
+                reg_ptr_t pin;
+            };
+
+            inline constexpr bool operator==(const _port_traits &v1, const _port_traits &v2) {
+                return
+                        v1.ddr == v2.ddr &&
+                        v1.port == v2.port &&
+                        v1.pin == v2.pin;
+            }
+
+            inline constexpr bool operator!=(const _port_traits &v1, const _port_traits &v2) {
+                return !(operator==(v1, v2));
+            }
+
+            constexpr _port_traits const port_null = {};
+
+            struct _pin_traits {
+                _port_traits    port;
+                uint8_t         port_bit;
+                _timer_traits   timer;
+                reg_ptr_t       timer_ocr;
+                uint8_t         timer_com_bit;
+            };
+
+            inline constexpr bool operator==(const _pin_traits &v1, const _pin_traits &v2) {
+                return
+                        v1.port == v2.port &&
+                        v1.port_bit == v2.port_bit;
+            }
+
+            inline constexpr bool operator!=(const _pin_traits &v1, const _pin_traits &v2) {
+                return !(operator==(v1, v2));
+            }
+
+            constexpr _pin_traits const pin_null = {};
+
+        } // namespace io
+
+    } // namespace hardware
+
+    template < class _t = uint8_t >
+    inline void cbi(reg_ptr_t r, uint8_t bit) {
+        auto nr = (volatile _t *)(r);
+        (*nr)&= ~_BV(bit);
     }
 
-    template<class _sbt, class _bt>
-    inline void cbi(_sbt sfr, _bt bit) {
-        _SFR_BYTE(sfr) &= ~_BV(bit);
+    template < class _t = uint8_t >
+    inline void sbi(reg_ptr_t r, uint8_t bit) {
+        auto nr = (volatile _t *)(r);
+        (*nr) |= _BV(bit);
     }
 
-    template<class _sbt, class _bt>
-    inline void sbi(_sbt sfr, _bt bit) {
-        _SFR_BYTE(sfr) |= _BV(bit);
+    template < class _t >
+    constexpr inline _t make_mask (uint8_t n, uint8_t shift = 0) {
+        return ~(~_t(0) << n) << shift;
+    }
+
+    template < class _t >
+    constexpr _t inline get_bit (_t src, uint8_t n) {
+        return (src & (_t (1) << (n)));
+    }
+
+    template < class _t >
+    constexpr inline _t set_bit (_t src, uint8_t v, uint8_t n) {
+        return (src & ~ (1 << n)) | ((_t (1) & v) << n);
+    }
+
+    template < class _t >
+    constexpr inline void write_n (reg_ptr_t r, _t v, uint8_t width, uint8_t shift) {
+        auto nr = (volatile _t *)(r);
+        auto mask = make_mask < _t > (width, shift);
+        (*nr) = ((*nr) & ~mask) | (v << shift);
     }
 
     struct interrupt_guard {
-        uint8_t sreg_backup;
+        uint8_t sreg_backup{};
 
         inline interrupt_guard() : sreg_backup(SREG) { cli(); }
 
@@ -114,11 +134,21 @@ namespace mcu {
     };
 
     template<class _t, size_t _s>
-    constexpr inline size_t array_size(_t (&)[_s]) {
+    constexpr inline size_t array_size(_t (& /*unused*/)[_s]) {
         return _s;
     };
 
-}
+    template < bool v, class _v1, class _v2 >
+    struct type_or {
+        using type = _v1;
+    };
+
+    template <class _v1, class _v2>
+    struct type_or < false, _v1, _v2> {
+        using type = _v2;
+    };
+
+} // namespace mcu
 
 // include mcu specific details
 #if defined (__AVR_ATmega328P__)

@@ -1,10 +1,17 @@
 #include "common/mcu_io_pin.h"
+#include "common/mcu_timer.h"
+
 
 int main (int arg_c, char ** arg_v) {
 
-    mcu::io::pin < 12 > pin_12 (mcu::io::pin_mode::output);
+    mcu::io::pin < 5 > pin (mcu::io::pin_mode::output);
 
-    pin_12.set (mcu::io::pin_state::high);
+    mcu::timer < 0 > timer;
+
+    pin.set (mcu::io::pin_state::high);
+    pin.set_compare_mode(mcu::hardware::compare_output_mode::toggle);
+
+    timer.set_clock_selection(mcu::hardware::clock_select::clk_io_64);
 
     return 0;
 }

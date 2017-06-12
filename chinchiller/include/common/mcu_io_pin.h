@@ -21,37 +21,72 @@ namespace mcu {
         using pin_num_t = size_t;
 
         template < pin_num_t pin_num >
-        struct pin {
+        struct _basic_pin {
 
             // pin info
             constexpr static auto const &   traits      = mcu::hardware::io::pin_traits_lookup [pin_num - 1];
-            constexpr static uint8_t const  pin_mask    = _BV(traits.bit);
+            constexpr static uint8_t const  pin_mask    = _BV(traits.port_bit);
 
             // compile-time validation
             static_assert (pin_num > 0 && pin_num <= mcu::hardware::io::available_pin_count, "invalid pin number");
             static_assert (traits !=  mcu::hardware::io::pin_null, "unsupported pin");
+
+        };
+
+        constexpr bool _pin_has_timer (pin_num_t pin_num) {
+            return (pin_num > 0 && pin_num <= mcu::hardware::io::available_pin_count) &&
+                    mcu::hardware::io::pin_traits_lookup [pin_num - 1]
+                           .timer_ocr != reg_ptr_null;
+        }
+
+        template < pin_num_t pin_num >
+        struct _timer_pin : public _basic_pin < pin_num > {
+
+            inline void set_compare_mode (hardware::compare_output_mode  com_mode) const {
+                write_n (
+                        this->traits.timer.tccra,
+                        (uint8_t)com_mode,
+                        3, // TODO: replace by "non-magic number"
+                        this->traits.timer_com_bit
+                );
+            }
+
+            inline void set_ocr (uint8_t value) {
+                _SFR_BYTE(this->traits.timer_ocr) = value;
+            }
+
+        };
+
+        template < pin_num_t pin_num >
+        struct pin :
+                public type_or <
+                        _pin_has_timer(pin_num),
+                        _timer_pin < pin_num >,
+                        _basic_pin < pin_num >
+                >::type
+        {
 
             pin (pin_mode mode) {
                 set_mode (mode);
             }
 
             inline void set_mode (pin_mode mode) const {
-                volatile uint8_t * ddr  = traits.port.ddr.u8_ptr;
-                volatile uint8_t * port = traits.port.port.u8_ptr;
+                auto ddr  = this->traits.port.ddr;
+                auto port = this->traits.port.port;
 
                 interrupt_guard iguard;
 
                 switch (mode) {
                     case pin_mode::input:
-                        cbi(ddr, pin_mask);
-                        cbi(port, pin_mask);
+                        cbi(ddr, this->pin_mask);
+                        cbi(port, this->pin_mask);
                         break;
                     case pin_mode::pullup:
-                        cbi(ddr, pin_mask);
-                        sbi(port, pin_mask);
+                        cbi(ddr, this->pin_mask);
+                        sbi(port, this->pin_mask);
                         break;
                     case pin_mode::output:
-                        sbi(port, pin_mask);
+                        sbi(port, this->pin_mask);
                         break;
                     default:
                         break;
@@ -59,17 +94,17 @@ namespace mcu {
             }
 
             inline void set_high () const {
-				volatile uint8_t * port = traits.port.port.u8_ptr;
+				auto port = this->traits.port.port;
                 interrupt_guard iguard;
 
-				sbi (port, pin_mask);
+				sbi (port, this->pin_mask);
 			}
 
 			inline void set_low () const {
-                volatile uint8_t * port = traits.port.port.u8_ptr;
+                auto port = this->traits.port.port;
 				interrupt_guard iguard;
 
-				cbi(port, pin_mask);
+				cbi(port, this->pin_mask);
 			}
 
 			inline void set (pin_state state) const {
@@ -84,7 +119,7 @@ namespace mcu {
 			}
 
         };
-    }
-}
+    } // namespace io
+} // namespace mcu
 
 #endif // _chinchiller_common_mcu_io_pin_h_
