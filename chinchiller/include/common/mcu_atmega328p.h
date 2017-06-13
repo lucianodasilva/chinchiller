@@ -134,42 +134,42 @@ namespace mcu {
             constexpr _pin_traits const pin_traits_lookup[] = {
                     { // pin 01
                             port_d,
-                            6,
+                            PORTD6,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 02
                             port_d,
-                            0,
+                            PORTD0,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 03
                             port_d,
-                            1,
+                            PORTD1,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 04
                             port_d,
-                            2,
+                            PORTD2,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 05
                             port_d,
-                            3,
+                            PORTD3,
                             timer_traits_lookup[2],
                             to_reg(OCR2B),
                             4
                     },
                     { // pin 06
                             port_d,
-                            4,
+                            PORTD4,
                             timer_null,
                             reg_ptr_null,
                             0
@@ -180,77 +180,77 @@ namespace mcu {
                     pin_null,
                     { // pin 09
                             port_b,
-                            6,
+                            PORTB6,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 10
                             port_b,
-                            7,
+                            PORTB7,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 11
                             port_d,
-                            5,
+                            PORTD5,
                             timer_traits_lookup[0],
                             to_reg(OCR0B),
                             4
                     },
                     { // pin 12
                             port_d,
-                            6,
+                            PORTD6,
                             timer_traits_lookup[0],
                             to_reg(OCR0A),
                             6
                     },
                     { // pin 13
                             port_d,
-                            7,
+                            PORTD7,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 14
                             port_b,
-                            0,
+                            PORTB0,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 15
                             port_b,
-                            1,
+                            PORTB1,
                             timer_traits_lookup[1],
                             to_reg(OCR1A),
                             6
                     },
                     { // pin 16
                             port_b,
-                            2,
+                            PORTB2,
                             timer_traits_lookup[1],
                             to_reg(OCR1B),
                             4
                     },
                     { // pin 17
                             port_b,
-                            3,
+                            PORTB3,
                             timer_traits_lookup[2],
                             to_reg(OCR2A),
                             6
                     },
                     { // pin 18
                             port_b,
-                            4,
+                            PORTB4,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 19
                             port_b,
-                            5,
+                            PORTB5,
                             timer_null,
                             reg_ptr_null,
                             0
@@ -263,42 +263,42 @@ namespace mcu {
                     pin_null,
                     { // pin 23
                             port_c,
-                            0,
+                            PORTC0,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 24
                             port_c,
-                            1,
+                            PORTC1,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 25
                             port_c,
-                            2,
+                            PORTC2,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 26
                             port_c,
-                            3,
+                            PORTC3,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 27
                             port_c,
-                            4,
+                            PORTC4,
                             timer_null,
                             reg_ptr_null,
                             0
                     },
                     { // pin 28
                             port_c,
-                            5,
+                            PORTC5,
                             timer_null,
                             reg_ptr_null,
                             0

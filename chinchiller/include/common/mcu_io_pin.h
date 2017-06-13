@@ -43,6 +43,7 @@ namespace mcu {
         struct _timer_pin : public _basic_pin < pin_num > {
 
             inline void set_compare_mode (hardware::compare_output_mode  com_mode) const {
+                interrupt_guard iguard;
                 write_n (
                         this->traits.timer.tccra,
                         (uint8_t)com_mode,
@@ -52,7 +53,9 @@ namespace mcu {
             }
 
             inline void set_ocr (uint8_t value) {
-                _SFR_BYTE(this->traits.timer_ocr) = value;
+                interrupt_guard iguard;
+
+                *from_reg(this->traits.timer_ocr) = value;
             }
 
         };

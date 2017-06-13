@@ -8,6 +8,10 @@
 
 namespace mcu {
 
+    void setup ();
+
+    uint32_t millis ();
+
     using reg_ptr_t = uint16_t;
 
 #   define to_reg(r)(reg_ptr_t)&r
@@ -146,6 +150,11 @@ namespace mcu {
     template <class _v1, class _v2>
     struct type_or < false, _v1, _v2> {
         using type = _v2;
+    };
+
+    template < uint32_t cpu_f, uint8_t timer_num >
+    inline void set_cpu_clock () {
+
     };
 
 } // namespace mcu
