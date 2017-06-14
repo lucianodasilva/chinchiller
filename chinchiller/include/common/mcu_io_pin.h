@@ -121,6 +121,13 @@ namespace mcu {
 				}
 			}
 
+			inline pin_state get () const {
+				interrupt_guard iguard;
+				
+				auto in_reg = reinterpret_cast < volatile uint8_t * > (this->traits.port.port);
+				return get_bit(in_reg, this->traits.port_bit);
+			}
+
         };
     } // namespace io
 } // namespace mcu

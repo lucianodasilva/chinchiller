@@ -1,6 +1,11 @@
 # Build folders and ides
 build/
+
+.vs/
 .vscode/
+Debug/
+Release/
+
 .idea/
 cmake-build-*/
 
