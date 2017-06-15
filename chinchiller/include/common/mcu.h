@@ -11,6 +11,10 @@ namespace mcu {
     void setup ();
 
     uint32_t millis ();
+	uint32_t micros ();
+
+	void delay (uint32_t ms);
+	void delay_us (uint32_t us);
 
     using reg_ptr_t = uint16_t;
 
@@ -112,8 +116,9 @@ namespace mcu {
     }
 
     template < class _t >
-    constexpr inline _t set_bit (_t src, uint8_t v, uint8_t n) {
-        return (src & ~ (1 << n)) | ((_t (1) & v) << n);
+    constexpr inline void set_bit (_t & src, uint8_t v, uint8_t n) {
+		auto bit_mask =  ((_t (1) & (v & 0x01)) << n);
+        src = (src & ~(1 << n)) | bit_mask;
     }
 
     template < class _t >

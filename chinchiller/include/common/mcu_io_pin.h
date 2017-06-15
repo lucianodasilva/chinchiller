@@ -13,11 +13,6 @@ namespace mcu {
             pullup = 2
         };
 
-        enum class pin_state : uint8_t {
-            low = 0,
-            high = 1
-        };
-
         using pin_num_t = size_t;
 
         template < pin_num_t pin_num >
@@ -25,7 +20,6 @@ namespace mcu {
 
             // pin info
             constexpr static auto const &   traits      = mcu::hardware::io::pin_traits_lookup [pin_num - 1];
-            constexpr static uint8_t const  pin_mask    = _BV(traits.port_bit);
 
             // compile-time validation
             static_assert (pin_num > 0 && pin_num <= mcu::hardware::io::available_pin_count, "invalid pin number");
@@ -77,19 +71,22 @@ namespace mcu {
                 auto ddr  = this->traits.port.ddr;
                 auto port = this->traits.port.port;
 
+				auto bit = this->traits.port_bit;
+
                 interrupt_guard iguard;
 
                 switch (mode) {
                     case pin_mode::input:
-                        cbi(ddr, this->pin_mask);
-                        cbi(port, this->pin_mask);
+                        cbi(ddr, bit);
+                        cbi(port, bit);
                         break;
                     case pin_mode::pullup:
-                        cbi(ddr, this->pin_mask);
-                        sbi(port, this->pin_mask);
+                        cbi(ddr, bit);
+                        sbi(port, bit);
                         break;
                     case pin_mode::output:
-                        sbi(port, this->pin_mask);
+						sbi(ddr, bit);
+                        cbi(port, bit);
                         break;
                     default:
                         break;
@@ -99,32 +96,25 @@ namespace mcu {
             inline void set_high () const {
 				auto port = this->traits.port.port;
                 interrupt_guard iguard;
-
-				sbi (port, this->pin_mask);
+				sbi (port, this->traits.port_bit);
 			}
 
 			inline void set_low () const {
                 auto port = this->traits.port.port;
 				interrupt_guard iguard;
 
-				cbi(port, this->pin_mask);
+				cbi(port, this->traits.port_bit);
 			}
 
-			inline void set (pin_state state) const {
-				switch (state) {
-					case pin_state::low:
-						set_low ();
-						break;
-					default:
-						set_high ();
-						break;
-				}
-			}
-
-			inline pin_state get () const {
+			inline void set (uint8_t v) const {
+				auto out_reg = from_reg (this->traits.port.port);
 				interrupt_guard iguard;
-				
-				auto in_reg = reinterpret_cast < volatile uint8_t * > (this->traits.port.port);
+				set_bit (*out_reg, v, this->traits.port_bit);
+			}
+
+			inline uint8_t get () const {
+				auto in_reg = from_reg (this->traits.port.pin);
+				interrupt_guard iguard;
 				return get_bit(in_reg, this->traits.port_bit);
 			}
 

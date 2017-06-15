@@ -1,6 +1,6 @@
-#pragma once7
-#ifndef _common_button_h_
-#define _common_button_h_
+#pragma once
+#ifndef _common_drivers_button_h_
+#define _common_drivers_button_h_
 
 #include "common/mcu.h"
 
