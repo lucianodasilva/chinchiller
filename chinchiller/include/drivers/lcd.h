@@ -106,6 +106,27 @@ namespace drivers {
 			return *this;
 		}
 
+		lcd & operator << (int v) {
+			char buffer [16];
+			itoa(v, +buffer, 10);
+
+			return operator << (+buffer);
+		}
+
+		lcd & operator << (unsigned v) {
+			char buffer [16];
+			utoa(v, +buffer, 10);
+
+			return operator << (+buffer);
+		}
+
+		lcd & operator << (double v) {
+			char buffer [16];
+			dtostrf(v, 0, 2, +buffer);
+
+			return operator << (+buffer);
+		}
+
 	private:
 
 		inline void command (uint8_t c, uint8_t p = 0) const {

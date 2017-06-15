@@ -190,6 +190,10 @@
       <SubType>compile</SubType>
       <Link>mcu_atmega328p.h</Link>
     </Compile>
+    <Compile Include="..\..\chinchiller\include\common\mcu_io_adc.h">
+      <SubType>compile</SubType>
+      <Link>mcu_io_adc.h</Link>
+    </Compile>
     <Compile Include="..\..\chinchiller\include\common\mcu_io_pin.h">
       <SubType>compile</SubType>
       <Link>mcu_io_pin.h</Link>

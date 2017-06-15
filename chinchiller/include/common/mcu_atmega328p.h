@@ -307,6 +307,13 @@ namespace mcu {
 
             constexpr size_t const available_pin_count = array_size(pin_traits_lookup);
 
+			constexpr _adc_traits const adc_traits = {
+				to_reg(ADMUX),
+				to_reg(ADCSRA),
+				to_reg(ADCL),
+				to_reg(ADCH)
+			};
+
         }
 
     }

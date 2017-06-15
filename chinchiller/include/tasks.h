@@ -89,6 +89,22 @@ inline auto make_timed_task (size_t freq, _t * ... tasks) {
 	return new __timed_task<sizeof...(_t)>(freq, tasks...);
 }
 
+template < mcu::io::pin_num_t _pin_n, class _ft >
+class __button_task : public __lambda_task < _ft > {
+public:
+
+	mcu::io::pin < _pin_n > pin = { mcu::io::pin_mode::pullup };
+
+	virtual void run () override {
+
+	}
+
+	explicit __button_task (_ft && f) : __lambda_task(f) {}
+
+private:
+	
+};
+
 template < size_t _capacity >
 struct __task_executor {
 	task * tasks [_capacity];

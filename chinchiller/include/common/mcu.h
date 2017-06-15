@@ -5,6 +5,7 @@
 #include <avr/interrupt.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 namespace mcu {
 
@@ -89,6 +90,13 @@ namespace mcu {
 
             constexpr _pin_traits const pin_null = {};
 
+			struct _adc_traits {
+				reg_ptr_t mux;
+				reg_ptr_t csra;
+				reg_ptr_t data_l;
+				reg_ptr_t data_h;
+			};
+
         } // namespace io
 
     } // namespace hardware
@@ -171,6 +179,7 @@ namespace mcu {
 
 // include hardware manipulators
 #include "mcu_io_pin.h"
+#include "mcu_io_adc.h"
 #include "mcu_timer.h"
 
 #endif //_chinchiller_common_mcu_h_

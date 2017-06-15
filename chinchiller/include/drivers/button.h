@@ -11,7 +11,7 @@ namespace drivers {
 	public:
 
 		inline bool is_pressed () const {
-			return pin.get () == pin_state::high;
+			return pin.get () == 1
 		}
 
 	private:
