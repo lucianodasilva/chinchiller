@@ -93,17 +93,48 @@ template < mcu::io::pin_num_t _pin_n, class _ft >
 class __button_task : public __lambda_task < _ft > {
 public:
 
+	static uint32_t const debounce_constant = 100;
+
 	mcu::io::pin < _pin_n > pin = { mcu::io::pin_mode::pullup };
 
 	virtual void run () override {
+		if (pin.get() == 1) {
 
+			if (_pressed) {
+				__lambda_task< _ft >::run ();
+			} else {
+				if (_debounce) {
+					if ((mcu::millis () - _time_stamp) > debounce_constant) {
+						_pressed = true;
+						__lambda_task< _ft >::run ();
+					}
+				} else {
+					_time_stamp = mcu::millis();
+					_debounce = true;
+				}
+			}
+
+		} else if (_pressed) {
+			_pressed = false;
+			_debounce = false;
+			_time_stamp = 0;
+		}
 	}
 
-	explicit __button_task (_ft && f) : __lambda_task(f) {}
+	explicit __button_task (_ft && f) : __lambda_task < _ft > (f) {}
 
 private:
-	
+
+	bool 		_pressed 	= false;
+	bool 		_debounce 	= false;
+	uint32_t 	_time_stamp = 0;
+
 };
+
+template < mcu::io::pin_num_t _pin_n, class _ft >
+inline auto make_button_task (_ft && f) {
+	return new __button_task < _pin_n, _ft > (move(f));
+}
 
 template < size_t _capacity >
 struct __task_executor {
