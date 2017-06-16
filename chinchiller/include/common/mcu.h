@@ -7,6 +7,42 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+template<class _ty>
+struct _remove_reference
+{   // remove reference
+	typedef _ty _type;
+};
+
+template<class _ty>
+struct _remove_reference<_ty&>
+{   // remove reference
+	typedef _ty _type;
+};
+
+template<class _ty>
+struct _remove_reference<_ty&&>
+{   // remove rvalue reference
+	typedef _ty _type;
+};
+
+template<class _t> inline
+constexpr typename _remove_reference<_t>::_type && move(_t && arg)
+{   // forward _Arg as movable
+	return ((typename _remove_reference<_t>::_type &&)arg);
+}
+
+void * operator new(size_t size);
+void operator delete(void * ptr);
+void operator delete(void * ptr, size_t size);
+
+__extension__ typedef int __guard __attribute__((mode (__DI__)));
+
+extern "C" int __cxa_guard_acquire(__guard *);
+extern "C" void __cxa_guard_release (__guard *);
+extern "C" void __cxa_guard_abort (__guard *);
+
+extern "C" void __cxa_pure_virtual(void);
+
 namespace mcu {
 
     void setup ();
@@ -120,7 +156,7 @@ namespace mcu {
 
     template < class _t >
     constexpr _t inline get_bit (_t src, uint8_t n) {
-        return (src & (_t (1) << (n)));
+        return (src & (_t(1) << n)) >> n;
     }
 
     template < class _t >
@@ -163,11 +199,6 @@ namespace mcu {
     template <class _v1, class _v2>
     struct type_or < false, _v1, _v2> {
         using type = _v2;
-    };
-
-    template < uint32_t cpu_f, uint8_t timer_num >
-    inline void set_cpu_clock () {
-
     };
 
 } // namespace mcu

@@ -115,7 +115,7 @@ namespace mcu {
 			inline uint8_t get () const {
 				auto in_reg = from_reg (this->traits.port.pin);
 				interrupt_guard iguard;
-				return get_bit(in_reg, this->traits.port_bit);
+				return get_bit(*in_reg, this->traits.port_bit);
 			}
 
         };

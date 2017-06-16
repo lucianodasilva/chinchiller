@@ -1,14 +1,14 @@
 #include "common/mcu.h"
 
-#define F_CPU 16000000L
+#define F_CPU 16000000UL
 #include <util/delay.h>
 
 volatile uint32_t _timer_ovf_millis = 0;
 volatile uint32_t _timer_ovf_counter_f = 0;
 
-constexpr uint32_t const _cycles_to_microseconds =  F_CPU / 1000000;
-constexpr uint32_t const _microseconds_per_timer0_ovf = 16384 / _cycles_to_microseconds;
-constexpr uint32_t const _milliseconds_per_timer0_ovf = _cycles_to_microseconds / 1000;
+constexpr uint32_t const _cycles_to_microseconds =  F_CPU / 1000000UL;
+constexpr uint32_t const _microseconds_per_timer0_ovf = 16384000 / (F_CPU / 1000L);
+constexpr uint32_t const _milliseconds_per_timer0_ovf = _microseconds_per_timer0_ovf / 1000;
 
 constexpr uint32_t const _frac_inc = (_microseconds_per_timer0_ovf % 1000) >> 3;
 constexpr uint32_t const _frac_max = (1000 >> 3);
@@ -23,6 +23,27 @@ ISR(TIMER0_OVF_vect) {
         ++_timer_ovf_millis;
     }
 }
+
+void * operator new(size_t size)
+{
+	return malloc(size);
+}
+
+void operator delete(void * ptr)
+{
+	free(ptr);
+}
+
+void operator delete(void * ptr, size_t size)
+{
+	free(ptr);
+}
+
+int __cxa_guard_acquire(__guard *g) {return !*(char *)(g);};
+void __cxa_guard_release (__guard *g) {*(char *)g = 1;};
+void __cxa_guard_abort (__guard *) {};
+
+void __cxa_pure_virtual(void) {};
 
 namespace mcu {
 

@@ -4,29 +4,7 @@
 
 #include "common/mcu.h"
 
-template<class _ty>
-struct _remove_reference
-{   // remove reference
-	typedef _ty _type;
-};
-
-template<class _ty>
-struct _remove_reference<_ty&>
-{   // remove reference
-	typedef _ty _type;
-};
-
-template<class _ty>
-struct _remove_reference<_ty&&>
-{   // remove rvalue reference
-	typedef _ty _type;
-};
-
-template<class _t> inline
-typename _remove_reference<_t>::_type && move(_t && arg)
-{   // forward _Arg as movable
-	return ((typename _remove_reference<_t>::_type &&)arg);
-}
+using task_ptr_t = void (*)();
 
 class task {
 public:
@@ -35,29 +13,30 @@ public:
 	virtual void run () = 0;
 };
 
-template < class _ft >
-class __lambda_task : public task {
+class _ptr_task : public task {
 public:
 
-	virtual void run () override { _f(); }
+	virtual void run () override { 
+		if (_f)
+			_f(); 
+	}
 
-	explicit __lambda_task (_ft && f) : _f(f) {}
+	_ptr_task (task_ptr_t f) : _f{f} {}
 
 private:
-	_ft _f;
+	task_ptr_t _f;
 };
 
-template < class _ft >
-inline auto make_task (_ft && f) {
-	return new __lambda_task < _ft > (move(f));
+inline auto make_task (task_ptr_t callback) {
+	return new _ptr_task (callback);
 }
 
 template < size_t _capacity >
-class __timed_task : public task {
+class _timed_task : public task {
 public:
 
 	template < class ... _t >
-	__timed_task (size_t freq, _t * ... t) :
+	_timed_task (size_t freq, _t * ... t) :
 		_freq(freq),
 		_tasks {t...}
 	{}
@@ -73,7 +52,7 @@ public:
 		}
 	}
 
-	virtual ~__timed_task() {
+	virtual ~_timed_task() {
 		for (auto * t : _tasks)
 			delete t;
 	}
@@ -86,27 +65,27 @@ private:
 
 template < class ... _t >
 inline auto make_timed_task (size_t freq, _t * ... tasks) {
-	return new __timed_task<sizeof...(_t)>(freq, tasks...);
+	return new _timed_task<sizeof...(_t)> (freq, tasks...);
 }
 
-template < mcu::io::pin_num_t _pin_n, class _ft >
-class __button_task : public __lambda_task < _ft > {
+template < mcu::io::pin_num_t _pin_n >
+class _button_task : public _ptr_task {
 public:
 
-	static uint32_t const debounce_constant = 100;
+	static uint32_t const debounce_constant = 50;
 
 	mcu::io::pin < _pin_n > pin = { mcu::io::pin_mode::pullup };
 
 	virtual void run () override {
-		if (pin.get() == 1) {
-
+		if (pin.get() == 0) {
 			if (_pressed) {
-				__lambda_task< _ft >::run ();
+				_ptr_task::run ();
 			} else {
 				if (_debounce) {
 					if ((mcu::millis () - _time_stamp) > debounce_constant) {
 						_pressed = true;
-						__lambda_task< _ft >::run ();
+						if (_on_press)
+							_on_press();
 					}
 				} else {
 					_time_stamp = mcu::millis();
@@ -118,12 +97,22 @@ public:
 			_pressed = false;
 			_debounce = false;
 			_time_stamp = 0;
+
+			if (_on_release)
+				_on_release();
 		}
 	}
 
-	explicit __button_task (_ft && f) : __lambda_task < _ft > (f) {}
+	_button_task (task_ptr_t on_press, task_ptr_t on_release, task_ptr_t callback) : 
+		_ptr_task (callback),
+		_on_press(on_press),
+		_on_release(on_release)
+	{}
 
 private:
+
+	task_ptr_t _on_press;
+	task_ptr_t _on_release;
 
 	bool 		_pressed 	= false;
 	bool 		_debounce 	= false;
@@ -131,9 +120,9 @@ private:
 
 };
 
-template < mcu::io::pin_num_t _pin_n, class _ft >
-inline auto make_button_task (_ft && f) {
-	return new __button_task < _pin_n, _ft > (move(f));
+template < mcu::io::pin_num_t _pin_n >
+inline auto make_button_task (task_ptr_t on_press, task_ptr_t on_release = nullptr, task_ptr_t callback = nullptr) {
+	return new _button_task < _pin_n > (on_press, on_release, callback);
 }
 
 template < size_t _capacity >
@@ -153,7 +142,7 @@ struct __task_executor {
 
 template < class ... _t >
 inline auto make_task_executor(_t ... tasks) {
-	return __task_executor <sizeof...(_t)> {
+	return new __task_executor <sizeof...(_t)> {
 		tasks...
 	};
 }

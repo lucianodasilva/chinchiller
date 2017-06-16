@@ -3,24 +3,109 @@
 
 #include "tasks.h"
 
+using namespace mcu::io;
+using namespace drivers;
+
+double round_to_half (double v) {
+	v /= .5;
+
+	if (v > .0)
+		v += .5;
+	else
+		v -= .5;
+
+	return int (v) * 0.5;
+}
+
+struct system_status {
+	double temp_c = 0.0;
+	double temp_ref = 0.0;
+
+	double temp_target = 22.0;
+	double fan_speed = 0.0;
+
+	bool	button_dec = false;
+	bool	button_inc = false;
+};
+
+system_status status = {};
+
+lcd <
+	13, // rs
+	14, // e
+	6,	// data 0
+	5,	// data 1
+	4,	// data 2
+	3	// data 3
+>
+	display;
+
+void read_temperature () {
+	uint16_t t_val = adc::read(analog_channel::acd0, adc_prescaler::p128);
+	double temp_mv = (t_val / 1024.0) * 5000.0;
+	status.temp_c = round_to_half(temp_mv / 10.0);
+}
+
+void refresh_display () {
+	display.clear();
+
+	/*
+	+0123456789ABCDEF
+	0 T:xx.x  R:xx.x
+	1 >xx.x<  V:xxx.x
+	*/
+
+	display.set_precision (1);
+	display << pos {0, 0} << "T:" << status.temp_c;
+	display << pos {9, 0} << "R:" << status.temp_ref;
+
+	display << pos {0, 1} << "<" << round_to_half(status.temp_target) << ">";
+	display << pos {9, 1} << "V:" << status.fan_speed << "%";
+}
+
+// manage target temperature value
+void inc_press () {
+	status.button_inc = true;
+	status.temp_target += .5;
+}
+
+void inc_release () {
+	status.button_inc = false;
+	status.temp_target = round_to_half(status.temp_target);
+}
+
+void dec_press () {
+	status.button_dec = true;
+	status.temp_target -= .5;
+}
+
+void dec_release () {
+	status.button_dec = false;
+	status.temp_target = round_to_half(status.temp_target);
+}
+
+void update_target() {
+	double shift = .0;
+	double const shift_inc = 0.1; 
+
+	if (status.button_inc)
+		shift += shift_inc;
+
+	if (status.button_dec)
+		shift -= shift_inc;
+
+	status.temp_target += shift;
+
+	if (status.temp_target > 30.0)
+		status.temp_target = 30.0;
+
+	if (status.temp_target < 10.0)
+		status.temp_target = 10.0;
+}
+
 int main (int arg_c, char ** arg_v) {
 
-	using namespace mcu::io;
-	using namespace drivers;
-
     mcu::setup();
-
-	lcd <
-		13, // rs
-		14, // e
-		6,	// data 0
-		5,	// data 1
-		4,	// data 2
-		3	// data 3
-	>
-		display;
-
-	auto exec = make_task_executor();
 
 	display.init();
 
@@ -29,19 +114,25 @@ int main (int arg_c, char ** arg_v) {
 	adc::set_reference(voltage_reference::avcc);
 	adc::enable();
 
-    while(1){
-        exec.run();
+	auto exec = make_task_executor(
+		make_timed_task(200, 
+			// read temperature
+			make_task (&read_temperature),
+			// display task
+			make_task(&refresh_display)
+		),
+		make_timed_task(75,
+			make_task(&update_target)
+		),
+		make_button_task < 16 > (&dec_press, &dec_release),
+		make_button_task < 15 > (&inc_press, &inc_release)
+	);
 
-		uint16_t t_val = adc::read(analog_channel::acd0, adc_prescaler::p128);
-		display.clear();
+	//uint32_t t200ms_frame = 0;
 
-		double mv = (t_val / 1024.0) * 5000;
-		double t_celsius = mv / 10.0;
-
-		display << pos { 0, 0 } << "mV: " << mv;
-		display << pos { 0, 1 } << " c: " << t_celsius;
-
-		mcu::delay(500);
+    while(1) {
+		exec->run ();
+		mcu::delay(50);
     }
 		
     return 0;

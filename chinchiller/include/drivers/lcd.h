@@ -93,6 +93,9 @@ namespace drivers {
 			command (cmd_entry_mode_set, _disp_mode);
 		}
 
+		inline void set_precision (uint8_t v) {
+			_precision = v;
+		}
 
 		inline lcd & operator << (const pos & p) {
 			set_cursor(p.x, p.y);
@@ -106,14 +109,14 @@ namespace drivers {
 			return *this;
 		}
 
-		lcd & operator << (int v) {
+		lcd & operator << (int32_t v) {
 			char buffer [16];
 			itoa(v, +buffer, 10);
 
 			return operator << (+buffer);
 		}
 
-		lcd & operator << (unsigned v) {
+		lcd & operator << (uint32_t v) {
 			char buffer [16];
 			utoa(v, +buffer, 10);
 
@@ -122,7 +125,7 @@ namespace drivers {
 
 		lcd & operator << (double v) {
 			char buffer [16];
-			dtostrf(v, 0, 2, +buffer);
+			dtostrf(v, 0, _precision, +buffer);
 
 			return operator << (+buffer);
 		}
@@ -173,6 +176,8 @@ namespace drivers {
 		uint8_t _disp_func;
 		uint8_t _disp_ctrl;
 		uint8_t _disp_mode;
+
+		uint8_t _precision = 2;
 
 		static constexpr uint8_t const
 			// commands
