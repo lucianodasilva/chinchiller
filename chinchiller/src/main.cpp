@@ -6,17 +6,6 @@
 using namespace mcu::io;
 using namespace drivers;
 
-double round_to_half (double v) {
-	v /= .5;
-
-	if (v > .0)
-		v += .5;
-	else
-		v -= .5;
-
-	return int (v) * 0.5;
-}
-
 struct system_status {
 	double temp_c = 0.0;
 	double temp_ref = 0.0;
@@ -33,12 +22,23 @@ system_status status = {};
 lcd <
 	13, // rs
 	14, // e
-	6,	// data 0
-	5,	// data 1
-	4,	// data 2
-	3	// data 3
+	3,	// data 0
+	4,	// data 1
+	5,	// data 2
+	6	// data 3
 >
 	display;
+
+double round_to_half (double v) {
+	v /= .5;
+
+	if (v > .0)
+	v += .5;
+	else
+	v -= .5;
+
+	return int (v) * 0.5;
+}
 
 void read_temperature () {
 	uint16_t t_val = adc::read(analog_channel::acd0, adc_prescaler::p128);
@@ -124,8 +124,8 @@ int main (int arg_c, char ** arg_v) {
 		make_timed_task(75,
 			make_task(&update_target)
 		),
-		make_button_task < 16 > (&dec_press, &dec_release),
-		make_button_task < 15 > (&inc_press, &inc_release)
+		make_button_task < 19 > (&dec_press, &dec_release),
+		make_button_task < 18 > (&inc_press, &inc_release)
 	);
 
 	//uint32_t t200ms_frame = 0;
