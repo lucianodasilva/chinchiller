@@ -201,6 +201,11 @@ namespace mcu {
         using type = _v2;
     };
 
+	template < class _t >
+	constexpr inline _t clamp (_t const & min, _t const & max, _t const & v) {
+		return v < min ? min : ( v > max ? max : v );
+	}
+
 } // namespace mcu
 
 // include mcu specific details

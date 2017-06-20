@@ -4,6 +4,8 @@
 
 #include "tasks.h"
 
+#include <math.h>
+
 using namespace mcu::io;
 using namespace drivers;
 
@@ -44,9 +46,24 @@ double round_to_half (double v) {
 }
 
 void read_temperature () {
+
+	static double	buffered_temperature [16] = {};
+	static uint8_t	buffer_index = 0;
+	
 	uint16_t t_val = adc::read(analog_channel::acd0, adc_prescaler::p128);
 	double temp_mv = (t_val / 1024.0) * 5000.0;
-	status.temp_c = round_to_half(temp_mv / 10.0);
+
+	buffered_temperature[buffer_index] = round_to_half(temp_mv / 10);
+
+	double avr = 0.0;
+	for (auto & t : buffered_temperature)
+		avr += t;
+
+	status.temp_c = avr / double(mcu::array_size(buffered_temperature));
+
+	++buffer_index;
+	if (buffer_index == mcu::array_size(buffered_temperature))
+		buffer_index = 0;
 }
 
 void refresh_display () {
@@ -55,7 +72,7 @@ void refresh_display () {
 	/*
 	+0123456789ABCDEF
 	0 T:xx.x  R:xx.x
-	1 >xx.x<  V:xxx.x
+	1 >xx.x<  V:xxx%
 	*/
 
 	display.set_precision (1);
@@ -63,6 +80,7 @@ void refresh_display () {
 	display << pos {9, 0} << "R:" << status.temp_ref;
 
 	display << pos {0, 1} << "<" << round_to_half(status.temp_target) << ">";
+	display.set_precision(0);
 	display << pos {9, 1} << "V:" << status.fan_speed << "%";
 }
 
@@ -99,11 +117,40 @@ void update_target() {
 
 	status.temp_target += shift;
 
-	if (status.temp_target > 30.0)
-		status.temp_target = 30.0;
+	status.temp_target = mcu::clamp (10.0, 30.0, status.temp_target);
+}
 
-	if (status.temp_target < 10.0)
-		status.temp_target = 10.0;
+void update_fan() {
+
+	static uint32_t prev_time = 0;
+	static double	prev_error = 0;
+	static double	integral = 0;
+
+	static double const
+		kp = 20,
+		ki = 15,
+		kd = 1;
+
+	uint32_t time = mcu::millis();
+	double dt = (time - prev_time) / 1000.0;
+
+	double error = status.temp_c - status.temp_target;
+
+	integral += error * dt;
+
+	double 
+		p = kp * error,
+		i = ki * integral,
+		d = kd * ((error - prev_error) / dt);
+
+	status.fan_speed = p + i + d;
+
+	status.fan_speed = mcu::clamp(0.0, 100.0, status.fan_speed);
+
+	prev_error = error;
+	prev_time = time;
+
+	integral = mcu::clamp(-10.0, 10.0, integral);
 }
 
 void update_status_indicator () {
@@ -167,7 +214,9 @@ int main (int arg_c, char ** arg_v) {
 			// display task
 			make_task(&refresh_display),
 			// update danger indicator
-			make_task(&update_status_indicator)
+			make_task(&update_status_indicator),
+			// check fan pid
+			make_task(&update_fan)
 		),
 		make_timed_task(75,
 			make_task(&update_target)
