@@ -1,5 +1,6 @@
 #include "common/mcu.h"
 #include "drivers/lcd.h"
+#include "drivers/led.h"
 
 #include "tasks.h"
 
@@ -7,11 +8,11 @@ using namespace mcu::io;
 using namespace drivers;
 
 struct system_status {
-	double temp_c = 0.0;
-	double temp_ref = 0.0;
+	double	temp_c = 0.0;
+	double	temp_ref = 0.0;
 
-	double temp_target = 22.0;
-	double fan_speed = 0.0;
+	double	temp_target = 22.0;
+	double	fan_speed = 0.0;
 
 	bool	button_dec = false;
 	bool	button_inc = false;
@@ -28,6 +29,8 @@ lcd <
 	6	// data 3
 >
 	display;
+
+led <17, 16, 15, true > danger_indicator;
 
 double round_to_half (double v) {
 	v /= .5;
@@ -103,6 +106,39 @@ void update_target() {
 		status.temp_target = 10.0;
 }
 
+void update_status_indicator () {
+	//status_indicator.set(color{128, 128, 128});
+	double max = 24.0;
+	double safe = 16.0;
+
+
+	double m = (status.temp_c - safe) / (max - safe);
+
+	if (m < 0.0)
+		m = 0.0;
+
+	if (m > 1.0)
+		m = 1.0;
+
+	color c;
+
+	if (m < 0.5) {
+		c = color::interpolate(
+			{ 0, 128, 0 },
+			{ 255, 128, 0 },
+			m * 2.0 * 255
+		);
+	} else {
+		c = color::interpolate(
+			{ 255, 128, 0 },
+			{ 255, 0, 0 },
+			(m - .5) * 2.0 * 255
+		);
+	}
+
+	danger_indicator.set(c);
+}
+
 int main (int arg_c, char ** arg_v) {
 
     mcu::setup();
@@ -114,12 +150,24 @@ int main (int arg_c, char ** arg_v) {
 	adc::set_reference(voltage_reference::avcc);
 	adc::enable();
 
+	// setup timers for rgb led
+	auto timer1 = mcu::timer < 1 >();
+
+	timer1.set_clock_selection(mcu::timer< 1 >::trait_types::clock_select_enum::clk_io_none);
+	timer1.set_pwd(mcu::timer< 1 >::trait_types::waveform_generation_enum::pwm_8bit_ff00);
+
+	auto timer2 = mcu::timer < 2 >();
+	timer2.set_clock_selection(mcu::timer< 2 >::trait_types::clock_select_enum::clk_io_none);
+	timer2.set_pwd(mcu::timer< 2 >::trait_types::waveform_generation_enum::pwm_ff03);
+
 	auto exec = make_task_executor(
 		make_timed_task(200, 
 			// read temperature
 			make_task (&read_temperature),
 			// display task
-			make_task(&refresh_display)
+			make_task(&refresh_display),
+			// update danger indicator
+			make_task(&update_status_indicator)
 		),
 		make_timed_task(75,
 			make_task(&update_target)
@@ -128,11 +176,9 @@ int main (int arg_c, char ** arg_v) {
 		make_button_task < 18 > (&inc_press, &inc_release)
 	);
 
-	//uint32_t t200ms_frame = 0;
-
     while(1) {
 		exec->run ();
-		mcu::delay(50);
+		mcu::delay(10);
     }
 		
     return 0;

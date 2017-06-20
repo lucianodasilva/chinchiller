@@ -42,34 +42,35 @@ namespace mcu {
         constexpr size_t const available_timer_count = array_size(timer_traits_lookup);
 
         enum struct compare_output_mode : uint8_t {
-            normal  = 0b00,
-            toggle  = 0b01,
-            clear   = 0b10,
-            set     = 0b11
+            normal			= 0b00,
+            toggle			= 0b01,
+            clear			= 0b10,
+            set				= 0b11
         };
 
         enum struct waveform_generation_mode_8bit : uint8_t {
-            normal  = 0b000,
-            pwm_ff  = 0b001,
-            ctc     = 0b010,
-            pwm_ocr = 0b101
+            normal			= 0b000,
+            pwm_ff01		= 0b001,
+            ctc				= 0b010,
+			pwm_ff03		= 0b011,
+            pwm_ocr			= 0b101
         };
 
         enum struct waveform_generation_mode_16bit : uint16_t {
             normal          = 0b0000,
-            pwm_8bit_00ff   = 0b0001,
-            pwm_9bit_01ff   = 0b0010,
-            pwm_10bit_03ff  = 0b0011,
+            pwm_8bit_ff00   = 0b0001,
+            pwm_9bit_ff01   = 0b0010,
+            pwm_10bit_ff03  = 0b0011,
             ctc             = 0b0100,
             pwm_freq_icr1   = 0b1000,
-            pwd_freq_ocr    = 0b1001,
-            pwd_icr1        = 0b1010,
-            pwd_ocr         = 0b1011,
+            pwm_freq_ocr    = 0b1001,
+            pwm_icr1        = 0b1010,
+            pwm_ocr         = 0b1011,
             ctc_icr1        = 0b1100
         };
 
         enum struct clock_select : uint8_t {
-            none            = 0b000,
+            not_set         = 0b000,
             clk_io_none     = 0b001,
             clk_io_8        = 0b010,
             clk_io_64       = 0b011,
@@ -80,8 +81,8 @@ namespace mcu {
         };
 
         enum struct clock_select_high_res : uint8_t {
-            none            = 0b000,
-            clk_io_none     = 0b001,
+			not_set			= 0b000,
+            clk_io_none		= 0b001,
             clk_io_8        = 0b010,
             clk_io_32       = 0b011,
             clk_io_64       = 0b100,

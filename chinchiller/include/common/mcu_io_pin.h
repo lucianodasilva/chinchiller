@@ -36,7 +36,7 @@ namespace mcu {
         template < pin_num_t pin_num >
         struct _timer_pin : public _basic_pin < pin_num > {
 
-            inline void set_compare_mode (hardware::compare_output_mode  com_mode) const {
+            inline void set_compare_mode (hardware::compare_output_mode com_mode) const {
                 interrupt_guard iguard;
                 write_n (
                         this->traits.timer.tccra,

@@ -33,7 +33,7 @@ namespace mcu {
             // set to tccrb
             // TODO: find a way around this hack
             auto tccrb_r = from_reg(traits.tccrb);
-            (*tccrb_r) = set_bit (
+            set_bit (
                     (*tccrb_r),
                     get_bit((uint8_t)wave_gen_mode, 2),
                     3
