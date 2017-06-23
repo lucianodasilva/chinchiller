@@ -3,6 +3,7 @@
 #define _chinchiller_common_mcu_io_adc_h_
 
 #include "mcu.h"
+#include <avr/sleep.h>
 
 namespace mcu {
 	namespace io {
@@ -52,14 +53,21 @@ namespace mcu {
 				mcu::write_n(hardware::io::adc_traits.mux, (uint8_t)channel, 4, 0);
 				// set prescaler
 				mcu::write_n(hardware::io::adc_traits.csra, (uint8_t)prescaler, 3, 0);
-				// start conversion
-				sbi(hardware::io::adc_traits.csra, ADSC);
+				
+				// start conversion (average four readings)
+				uint16_t v = 0;
 
-				while (!mcu::get_bit(*from_reg(hardware::io::adc_traits.csra), ADIF)){}
+				for (uint8_t i = 0; i < 4; ++i) {
+					sbi(hardware::io::adc_traits.csra, ADSC);
 
-				sbi(hardware::io::adc_traits.csra, ADIF);
+					while (!mcu::get_bit(*from_reg(hardware::io::adc_traits.csra), ADIF)){}
 
-				return ADC;
+					sbi(hardware::io::adc_traits.csra, ADIF);
+
+					v += ADC;
+				}
+
+				return v / 4;
 			}
 
 		};

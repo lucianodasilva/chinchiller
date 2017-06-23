@@ -32,7 +32,9 @@ lcd <
 >
 	display;
 
-led <17, 16, 15, true > danger_indicator;
+// led <17, 16, 15, true > danger_indicator;
+
+pin < 15 > motor_pin = { pin_mode::output };
 
 double round_to_half (double v) {
 	v /= .5;
@@ -122,9 +124,12 @@ void update_target() {
 
 void update_fan() {
 
-	static uint32_t prev_time = 0;
-	static double	prev_error = 0;
-	static double	integral = 0;
+	static uint32_t prev_time	= 0;
+	static double	prev_error	= 0;
+	static double	integral	= 0;
+
+	static uint8_t	prev_cycle	= 0;
+	static bool		is_timed	= false;
 
 	static double const
 		kp = 20,
@@ -151,8 +156,33 @@ void update_fan() {
 	prev_time = time;
 
 	integral = mcu::clamp(-10.0, 10.0, integral);
+
+	// update duty cycle
+	uint8_t cycle = (status.fan_speed / 100.0) * 255.0;
+
+	if (cycle != prev_cycle) {
+		if (cycle == 0 && is_timed) {
+			motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::normal);
+			motor_pin.set_low();
+			is_timed = false;
+		} else if (cycle == 255 && is_timed) {
+			motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::normal);
+			motor_pin.set_high();
+			is_timed = false;
+		} else {
+			if (!is_timed) {
+				motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::clear);
+				is_timed = true;
+			}
+
+			motor_pin.set_ocr(cycle);
+		}
+
+		prev_cycle = cycle;
+	}
 }
 
+/*
 void update_status_indicator () {
 	//status_indicator.set(color{128, 128, 128});
 	double max = 24.0;
@@ -185,6 +215,7 @@ void update_status_indicator () {
 
 	danger_indicator.set(c);
 }
+*/
 
 int main (int arg_c, char ** arg_v) {
 
@@ -197,15 +228,27 @@ int main (int arg_c, char ** arg_v) {
 	adc::set_reference(voltage_reference::avcc);
 	adc::enable();
 
-	// setup timers for rgb led
 	auto timer1 = mcu::timer < 1 >();
 
-	timer1.set_clock_selection(mcu::timer< 1 >::trait_types::clock_select_enum::clk_io_none);
+	timer1.set_clock_selection(mcu::timer< 1 >::trait_types::clock_select_enum::clk_io_256);
 	timer1.set_pwd(mcu::timer< 1 >::trait_types::waveform_generation_enum::pwm_8bit_ff00);
 
-	auto timer2 = mcu::timer < 2 >();
-	timer2.set_clock_selection(mcu::timer< 2 >::trait_types::clock_select_enum::clk_io_none);
-	timer2.set_pwd(mcu::timer< 2 >::trait_types::waveform_generation_enum::pwm_ff03);
+	// motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::clear);
+
+	// setup timer and pin for motor
+	//auto timer0 = mcu::timer < 0 >();
+	//timer0.set_pwd(mcu::timer < 0 >::trait_types::waveform_generation_enum::pwm_ff01);
+	//motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::clear);
+
+	// setup timers for rgb led
+	//auto timer1 = mcu::timer < 1 >();
+
+	//timer1.set_clock_selection(mcu::timer< 1 >::trait_types::clock_select_enum::clk_io_none);
+	//timer1.set_pwd(mcu::timer< 1 >::trait_types::waveform_generation_enum::pwm_8bit_ff00);
+
+	//auto timer2 = mcu::timer < 2 >();
+	//timer2.set_clock_selection(mcu::timer< 2 >::trait_types::clock_select_enum::clk_io_none);
+	//timer2.set_pwd(mcu::timer< 2 >::trait_types::waveform_generation_enum::pwm_ff01);
 
 	auto exec = make_task_executor(
 		make_timed_task(200, 
@@ -214,7 +257,7 @@ int main (int arg_c, char ** arg_v) {
 			// display task
 			make_task(&refresh_display),
 			// update danger indicator
-			make_task(&update_status_indicator),
+			//make_task(&update_status_indicator),
 			// check fan pid
 			make_task(&update_fan)
 		),
@@ -227,7 +270,7 @@ int main (int arg_c, char ** arg_v) {
 
     while(1) {
 		exec->run ();
-		mcu::delay(10);
+		mcu::delay(25);
     }
 		
     return 0;
