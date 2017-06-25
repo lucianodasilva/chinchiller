@@ -20,7 +20,7 @@ namespace mcu {
         static_assert (timer_num <= mcu::hardware::available_timer_count, "invalid timer number");
         static_assert (traits !=  mcu::hardware::timer_null, "unsupported timer");
 
-        inline void set_pwd (typename trait_types::waveform_generation_enum wave_gen_mode) {
+        inline void set_pwd (typename trait_types::waveform_generation_enum wave_gen_mode) const {
             interrupt_guard iguard;
             // set to tccra
             write_n (
@@ -40,7 +40,7 @@ namespace mcu {
             );
         }
 
-        inline void set_clock_selection (typename trait_types::clock_select_enum clock_select) {
+        inline void set_clock_selection (typename trait_types::clock_select_enum clock_select) const {
             interrupt_guard iguard;
 
             write_n(

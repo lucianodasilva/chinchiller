@@ -12,6 +12,22 @@ namespace mcu {
 
     namespace hardware {
 
+		enum struct voltage_reference : uint8_t {
+			aref = 0b00,
+			avcc = 0b01,
+			internal = 0b11
+		};
+				
+		enum struct analog_channel : uint8_t {
+			none = 0b1111,
+			acd0 = 0b0000,
+			acd1 = 0b0001,
+			acd2 = 0b0010,
+			acd3 = 0b0011,
+			acd4 = 0b0100,
+			acd5 = 0b0101
+		};
+
         constexpr _timer_traits const timer_traits_lookup[] = {
                 // timer0
                 {
@@ -138,42 +154,48 @@ namespace mcu {
                             PORTD6,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 02
                             port_d,
                             PORTD0,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 03
                             port_d,
                             PORTD1,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 04
                             port_d,
                             PORTD2,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 05
                             port_d,
                             PORTD3,
                             timer_traits_lookup[2],
                             to_reg(OCR2B),
-                            4
+                            4,
+							analog_channel::none
                     },
                     { // pin 06
                             port_d,
                             PORTD4,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     // pin 07
                     pin_null,
@@ -184,77 +206,88 @@ namespace mcu {
                             PORTB6,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 10
                             port_b,
                             PORTB7,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 11
                             port_d,
                             PORTD5,
                             timer_traits_lookup[0],
                             to_reg(OCR0B),
-                            4
+                            4,
+							analog_channel::none
                     },
                     { // pin 12
                             port_d,
                             PORTD6,
                             timer_traits_lookup[0],
                             to_reg(OCR0A),
-                            6
+                            6,
+							analog_channel::none
                     },
                     { // pin 13
                             port_d,
                             PORTD7,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 14
                             port_b,
                             PORTB0,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 15
                             port_b,
                             PORTB1,
                             timer_traits_lookup[1],
                             to_reg(OCR1A),
-                            6
+                            6,
+							analog_channel::none
                     },
                     { // pin 16
                             port_b,
                             PORTB2,
                             timer_traits_lookup[1],
                             to_reg(OCR1B),
-                            4
+                            4,
+							analog_channel::none
                     },
                     { // pin 17
                             port_b,
                             PORTB3,
                             timer_traits_lookup[2],
                             to_reg(OCR2A),
-                            6
+                            6,
+							analog_channel::none
                     },
                     { // pin 18
                             port_b,
                             PORTB4,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     { // pin 19
                             port_b,
                             PORTB5,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::none
                     },
                     // pin 20
                     pin_null,
@@ -267,42 +300,48 @@ namespace mcu {
                             PORTC0,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::acd0
                     },
                     { // pin 24
                             port_c,
                             PORTC1,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::acd1
                     },
                     { // pin 25
                             port_c,
                             PORTC2,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::acd2
                     },
                     { // pin 26
                             port_c,
                             PORTC3,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::acd3
                     },
                     { // pin 27
                             port_c,
                             PORTC4,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::acd4
                     },
                     { // pin 28
                             port_c,
                             PORTC5,
                             timer_null,
                             reg_ptr_null,
-                            0
+                            0,
+							analog_channel::acd5
                     }
             };
 

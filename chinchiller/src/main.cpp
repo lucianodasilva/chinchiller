@@ -1,23 +1,23 @@
 #include "common/mcu.h"
+
 #include "drivers/lcd.h"
-#include "drivers/led.h"
+#include "drivers/motor.h"
+#include "drivers/temperature.h"
 
 #include "tasks.h"
-
-#include <math.h>
 
 using namespace mcu::io;
 using namespace drivers;
 
 struct system_status {
-	double	temp_c = 0.0;
-	double	temp_ref = 0.0;
+	double	temp_c		= 0.0;
+	double	temp_ref	= 0.0;
 
 	double	temp_target = 22.0;
-	double	fan_speed = 0.0;
+	double	fan_speed	= 0.0;
 
-	bool	button_dec = false;
-	bool	button_inc = false;
+	bool	button_dec	= false;
+	bool	button_inc	= false;
 };
 
 system_status status = {};
@@ -29,12 +29,64 @@ lcd <
 	4,	// data 1
 	5,	// data 2
 	6	// data 3
->
-	display;
+>					display_driver;
 
-// led <17, 16, 15, true > danger_indicator;
+using motor_driver_t = motor < 1, 15 >;
 
-pin < 15 > motor_pin = { pin_mode::output };
+motor_driver_t motor_driver = { 
+	motor_driver_t::timer_t::trait_types::clock_select_enum::clk_io_256
+};
+
+temperature < 23 >	temperature_driver = { hardware::voltage_reference::avcc };
+
+void display_task ();
+
+// manage target temperature value
+void inc_press ();
+void inc_release ();
+
+void dec_press ();
+void dec_release ();
+
+void update_target();
+
+// calculate fan speed
+void fan_task ();
+
+// update temperature
+void temperature_task ();
+
+int main (int arg_c, char ** arg_v) {
+
+    mcu::setup();
+
+	display_driver.init();
+
+	auto exec = make_task_executor(
+		make_timed_task(200, 
+			// read temperature
+			make_task (&temperature_task),
+			// display task
+			make_task(&display_task),
+			// update danger indicator
+			//make_task(&update_status_indicator),
+			// check fan pid
+			make_task(&fan_task)
+		),
+		make_timed_task(75,
+			make_task(&update_target)
+		),
+		make_button_task < 19 > (&dec_press, &dec_release),
+		make_button_task < 18 > (&inc_press, &inc_release)
+	);
+
+    while(1) {
+		exec->run ();
+		mcu::delay(25);
+    }
+		
+    return 0;
+}
 
 double round_to_half (double v) {
 	v /= .5;
@@ -47,29 +99,9 @@ double round_to_half (double v) {
 	return int (v) * 0.5;
 }
 
-void read_temperature () {
-
-	static double	buffered_temperature [16] = {};
-	static uint8_t	buffer_index = 0;
-	
-	uint16_t t_val = adc::read(analog_channel::acd0, adc_prescaler::p128);
-	double temp_mv = (t_val / 1024.0) * 5000.0;
-
-	buffered_temperature[buffer_index] = round_to_half(temp_mv / 10);
-
-	double avr = 0.0;
-	for (auto & t : buffered_temperature)
-		avr += t;
-
-	status.temp_c = avr / double(mcu::array_size(buffered_temperature));
-
-	++buffer_index;
-	if (buffer_index == mcu::array_size(buffered_temperature))
-		buffer_index = 0;
-}
-
-void refresh_display () {
-	display.clear();
+// update display
+void display_task() {
+	display_driver.clear();
 
 	/*
 	+0123456789ABCDEF
@@ -77,13 +109,13 @@ void refresh_display () {
 	1 >xx.x<  V:xxx%
 	*/
 
-	display.set_precision (1);
-	display << pos {0, 0} << "T:" << status.temp_c;
-	display << pos {9, 0} << "R:" << status.temp_ref;
+	display_driver.set_precision (1);
+	display_driver << pos {0, 0} << "T:" << status.temp_c;
+	display_driver << pos {9, 0} << "R:" << status.temp_ref;
 
-	display << pos {0, 1} << "<" << round_to_half(status.temp_target) << ">";
-	display.set_precision(0);
-	display << pos {9, 1} << "V:" << status.fan_speed << "%";
+	display_driver << pos {0, 1} << "<" << round_to_half(status.temp_target) << ">";
+	display_driver.set_precision(0);
+	display_driver << pos {9, 1} << "V:" << status.fan_speed << "%";
 }
 
 // manage target temperature value
@@ -109,32 +141,35 @@ void dec_release () {
 
 void update_target() {
 	double shift = .0;
-	double const shift_inc = 0.1; 
+	double const shift_inc = 0.1;
 
 	if (status.button_inc)
-		shift += shift_inc;
+	shift += shift_inc;
 
 	if (status.button_dec)
-		shift -= shift_inc;
+	shift -= shift_inc;
 
 	status.temp_target += shift;
 
 	status.temp_target = mcu::clamp (10.0, 30.0, status.temp_target);
 }
 
-void update_fan() {
+// refresh temperature value
+void temperature_task () {
+	status.temp_c = temperature_driver.read();
+}
+
+// calculate and set fan speed
+void fan_task () {
 
 	static uint32_t prev_time	= 0;
 	static double	prev_error	= 0;
 	static double	integral	= 0;
 
-	static uint8_t	prev_cycle	= 0;
-	static bool		is_timed	= false;
-
 	static double const
-		kp = 20,
-		ki = 15,
-		kd = 1;
+	kp = 20,
+	ki = 15,
+	kd = 1;
 
 	uint32_t time = mcu::millis();
 	double dt = (time - prev_time) / 1000.0;
@@ -143,10 +178,10 @@ void update_fan() {
 
 	integral += error * dt;
 
-	double 
-		p = kp * error,
-		i = ki * integral,
-		d = kd * ((error - prev_error) / dt);
+	double
+	p = kp * error,
+	i = ki * integral,
+	d = kd * ((error - prev_error) / dt);
 
 	status.fan_speed = p + i + d;
 
@@ -160,118 +195,5 @@ void update_fan() {
 	// update duty cycle
 	uint8_t cycle = (status.fan_speed / 100.0) * 255.0;
 
-	if (cycle != prev_cycle) {
-		if (cycle == 0 && is_timed) {
-			motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::normal);
-			motor_pin.set_low();
-			is_timed = false;
-		} else if (cycle == 255 && is_timed) {
-			motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::normal);
-			motor_pin.set_high();
-			is_timed = false;
-		} else {
-			if (!is_timed) {
-				motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::clear);
-				is_timed = true;
-			}
-
-			motor_pin.set_ocr(cycle);
-		}
-
-		prev_cycle = cycle;
-	}
-}
-
-/*
-void update_status_indicator () {
-	//status_indicator.set(color{128, 128, 128});
-	double max = 24.0;
-	double safe = 16.0;
-
-
-	double m = (status.temp_c - safe) / (max - safe);
-
-	if (m < 0.0)
-		m = 0.0;
-
-	if (m > 1.0)
-		m = 1.0;
-
-	color c;
-
-	if (m < 0.5) {
-		c = color::interpolate(
-			{ 0, 128, 0 },
-			{ 255, 128, 0 },
-			m * 2.0 * 255
-		);
-	} else {
-		c = color::interpolate(
-			{ 255, 128, 0 },
-			{ 255, 0, 0 },
-			(m - .5) * 2.0 * 255
-		);
-	}
-
-	danger_indicator.set(c);
-}
-*/
-
-int main (int arg_c, char ** arg_v) {
-
-    mcu::setup();
-
-	display.init();
-
-	// display << pos {0, 0} << "Temp: 16 V: 100%" << pos { 0, 1 } << "Min: 20 Max:[40]";
-
-	adc::set_reference(voltage_reference::avcc);
-	adc::enable();
-
-	auto timer1 = mcu::timer < 1 >();
-
-	timer1.set_clock_selection(mcu::timer< 1 >::trait_types::clock_select_enum::clk_io_256);
-	timer1.set_pwd(mcu::timer< 1 >::trait_types::waveform_generation_enum::pwm_8bit_ff00);
-
-	// motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::clear);
-
-	// setup timer and pin for motor
-	//auto timer0 = mcu::timer < 0 >();
-	//timer0.set_pwd(mcu::timer < 0 >::trait_types::waveform_generation_enum::pwm_ff01);
-	//motor_pin.set_compare_mode(mcu::hardware::compare_output_mode::clear);
-
-	// setup timers for rgb led
-	//auto timer1 = mcu::timer < 1 >();
-
-	//timer1.set_clock_selection(mcu::timer< 1 >::trait_types::clock_select_enum::clk_io_none);
-	//timer1.set_pwd(mcu::timer< 1 >::trait_types::waveform_generation_enum::pwm_8bit_ff00);
-
-	//auto timer2 = mcu::timer < 2 >();
-	//timer2.set_clock_selection(mcu::timer< 2 >::trait_types::clock_select_enum::clk_io_none);
-	//timer2.set_pwd(mcu::timer< 2 >::trait_types::waveform_generation_enum::pwm_ff01);
-
-	auto exec = make_task_executor(
-		make_timed_task(200, 
-			// read temperature
-			make_task (&read_temperature),
-			// display task
-			make_task(&refresh_display),
-			// update danger indicator
-			//make_task(&update_status_indicator),
-			// check fan pid
-			make_task(&update_fan)
-		),
-		make_timed_task(75,
-			make_task(&update_target)
-		),
-		make_button_task < 19 > (&dec_press, &dec_release),
-		make_button_task < 18 > (&inc_press, &inc_release)
-	);
-
-    while(1) {
-		exec->run ();
-		mcu::delay(25);
-    }
-		
-    return 0;
+	motor_driver.set_duty_cycle(cycle);
 }

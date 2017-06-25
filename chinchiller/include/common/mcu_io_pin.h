@@ -46,7 +46,7 @@ namespace mcu {
                 );
             }
 
-            inline void set_ocr (uint8_t value) {
+            inline void set_ocr (uint8_t value) const {
                 interrupt_guard iguard;
 
                 *from_reg(this->traits.timer_ocr) = value;

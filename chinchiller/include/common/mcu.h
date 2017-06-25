@@ -62,6 +62,8 @@ namespace mcu {
 
     namespace hardware {
 
+		enum class analog_channel : uint8_t;
+
         struct _timer_traits {
             reg_ptr_t tccra;
             reg_ptr_t tccrb;
@@ -112,6 +114,7 @@ namespace mcu {
                 _timer_traits   timer;
                 reg_ptr_t       timer_ocr;
                 uint8_t         timer_com_bit;
+				analog_channel	adc_channel;
             };
 
             inline constexpr bool operator==(const _pin_traits &v1, const _pin_traits &v2) {

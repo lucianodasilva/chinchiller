@@ -274,6 +274,14 @@
       <SubType>compile</SubType>
       <Link>led.h</Link>
     </Compile>
+    <Compile Include="..\..\chinchiller\include\drivers\motor.h">
+      <SubType>compile</SubType>
+      <Link>motor.h</Link>
+    </Compile>
+    <Compile Include="..\..\chinchiller\include\drivers\temperature.h">
+      <SubType>compile</SubType>
+      <Link>temperature.h</Link>
+    </Compile>
     <Compile Include="..\..\chinchiller\include\tasks.h">
       <SubType>compile</SubType>
       <Link>tasks.h</Link>
