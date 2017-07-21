@@ -51,7 +51,7 @@ namespace drivers {
 
 		pin_t	_pin = { io::pin_mode::input };
 
-		double _value_buffer [16]	= {};
+		double _value_buffer [8]	= {};
 		int8_t _value_buffer_index	= -1;
 
 	};

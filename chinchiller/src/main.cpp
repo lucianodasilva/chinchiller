@@ -23,21 +23,21 @@ struct system_status {
 system_status status = {};
 
 lcd <
-	13, // rs
-	14, // e
-	3,	// data 0
-	4,	// data 1
-	5,	// data 2
-	6	// data 3
+	14, // rs
+	13, // e
+	6,	// data 0
+	5,	// data 1
+	4,	// data 2
+	3	// data 3
 >					display_driver;
 
 using motor_driver_t = motor < 1, 15 >;
 
 motor_driver_t motor_driver = { 
-	motor_driver_t::timer_t::trait_types::clock_select_enum::clk_io_256
+	motor_driver_t::timer_t::trait_types::clock_select_enum::clk_io_1024
 };
 
-temperature < 23 >	temperature_driver = { hardware::voltage_reference::avcc };
+temperature < 28 >	temperature_driver = { hardware::voltage_reference::avcc };
 
 void display_task ();
 
@@ -66,14 +66,11 @@ int main (int arg_c, char ** arg_v) {
 		make_timed_task(200, 
 			// read temperature
 			make_task (&temperature_task),
-			// display task
-			make_task(&display_task),
-			// update danger indicator
-			//make_task(&update_status_indicator),
 			// check fan pid
 			make_task(&fan_task)
 		),
 		make_timed_task(75,
+			make_task(&display_task),
 			make_task(&update_target)
 		),
 		make_button_task < 19 > (&dec_press, &dec_release),
@@ -156,7 +153,7 @@ void update_target() {
 
 // refresh temperature value
 void temperature_task () {
-	status.temp_c = temperature_driver.read();
+	status.temp_c = round_to_half(temperature_driver.read());
 }
 
 // calculate and set fan speed
@@ -167,9 +164,9 @@ void fan_task () {
 	static double	integral	= 0;
 
 	static double const
-	kp = 20,
-	ki = 15,
-	kd = 1;
+		kp = 20,
+		ki = 10,
+		kd = 1;
 
 	uint32_t time = mcu::millis();
 	double dt = (time - prev_time) / 1000.0;
